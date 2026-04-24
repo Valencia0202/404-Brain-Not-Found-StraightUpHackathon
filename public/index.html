@@ -12,8 +12,9 @@
         <h1>Sage Step</h1>
         <nav>
           <button class="nav-btn active" data-panel="chat-panel">Chat</button>
+          <button class="nav-btn" data-panel="progress-panel">Progress</button>
+          <button class="nav-btn" data-panel="stats-panel">Stats</button>
           <button class="nav-btn" data-panel="settings-panel">Settings</button>
-          <button class="nav-btn" data-panel="dashboard-panel">Dashboard</button>
         </nav>
         <p class="small">Hackathon mode: all core features wired.</p>
       </aside>
@@ -39,8 +40,7 @@
         </section>
 
         <section id="settings-panel" class="panel">
-          <h2>Settings</h2>
-          <form id="settings-form" class="stack">
+@@ -44,37 +45,41 @@
             <label>
               Language
               <input id="language" type="text" placeholder="e.g. English, Malay, Spanish" />
@@ -66,10 +66,14 @@
           <p id="settings-status" class="small"></p>
         </section>
 
-        <section id="dashboard-panel" class="panel">
+        <section id="progress-panel" class="panel">
+          <h2>Progress</h2>
+          <p id="dashboard-summary" class="small"></p>
+        </section>
+
+        <section id="stats-panel" class="panel">
           <h2>Live Metrics Dashboard</h2>
           <p class="small">Auto-refreshes every 2 seconds while this panel is open.</p>
-          <div id="dashboard-summary" class="small"></div>
           <div id="dashboard-users" class="cards"></div>
         </section>
       </main>
