@@ -25,8 +25,12 @@ export function analyzeBehavior(profile, message, intent) {
     profile.followUpDepth += 1;
   }
 
+  profile.lastIntent = intent;
   profile.lastMessages.push(message);
-  if (profile.lastMessages.length > 5) profile.lastMessages.shift();
+
+  if (profile.lastMessages.length > 5) {
+    profile.lastMessages.shift();
+  }
 
   return profile;
 }
@@ -35,20 +39,21 @@ export function classifyStudent(profile) {
   const {
     attempts,
     directAnswerRequests,
-    hintRequests
+    hintRequests,
+    followUpDepth
   } = profile;
 
   if (directAnswerRequests >= 2 && attempts === 0) {
     return "avoidant";
   }
 
-  if (attempts > 0 && hintRequests >= 2) {
+  if (hintRequests >= 2 && attempts > 0) {
     return "struggling";
   }
 
-  if (attempts >= 2 && directAnswerRequests === 0) {
+  if (attempts >= 2 && directAnswerRequests === 0 && followUpDepth > 0) {
     return "engaged";
   }
 
-  return "neutral";
+  return "average";
 }
