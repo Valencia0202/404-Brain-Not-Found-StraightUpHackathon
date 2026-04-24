@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import OpenAI from "openai";
 import multer from "multer";
 import pdf from "pdf-parse";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import { classifyIntent } from "./ai/intent.js";
 import { analyzeBehavior, classifyStudent } from "./ai/profiler.js";
@@ -12,9 +14,13 @@ import { resolveResponseLanguage } from "./ai/language.js";
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 const upload = multer({ storage: multer.memoryStorage() });
 
 const client = new OpenAI({
@@ -26,7 +32,7 @@ global.studentProfiles = global.studentProfiles || {};
 
 // ---------------- HOME ----------------
 app.get("/", (req, res) => {
-  res.send(`YOUR EXISTING HTML (UNCHANGED)`);
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // ---------------- CHAT ----------------
