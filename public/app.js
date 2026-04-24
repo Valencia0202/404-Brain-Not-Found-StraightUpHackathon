@@ -14,17 +14,24 @@ const uploadInChatButton = document.getElementById('upload-in-chat');
 let dashboardTimer = null;
 
 function switchPanel(panelId) {
-  navButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.panel === panelId));
-  panels.forEach((panel) => panel.classList.toggle('active', panel.id === panelId));
+  const panelExists = Array.from(panels).some((panel) => panel.id === panelId);
+  const resolvedPanelId = panelExists ? panelId : 'chat-panel';
+  
+ navButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.panel === resolvedPanelId));
+  panels.forEach((panel) => panel.classList.toggle('active', panel.id === resolvedPanelId));
 
-  if (panelId === 'dashboard-panel') {
-    startDashboardPolling();
+  if (resolvedPanelId === 'progress-panel' || resolvedPanelId === 'stats-panel') {    startDashboardPolling();
   } else {
     stopDashboardPolling();
   }
 }
+if (window.location.hash !== `#${resolvedPanelId}`) {
+    window.location.hash = resolvedPanelId;
+  }
 
-navButtons.forEach((btn) => btn.addEventListener('click', () => switchPanel(btn.dataset.panel)));
+navButtons.forEach((btn) =>
+  btn.addEventListener('click', () => switchPanel(btn.dataset.panel))
+);
 
 function appendMessage(role, text) {
   const line = document.createElement('div');
@@ -153,4 +160,12 @@ function stopDashboardPolling() {
   dashboardTimer = null;
 }
 
+
 loadSettings();
+const initialPanel = window.location.hash.replace('#', '') || 'chat-panel';
+switchPanel(initialPanel);
+
+window.addEventListener('hashchange', () => {
+  const panelFromHash = window.location.hash.replace('#', '') || 'chat-panel';
+  switchPanel(panelFromHash);
+});
