@@ -17,7 +17,7 @@ Choose the best language for the tutor's response based on:
 2) the language used in the student's message
 
 If preferredLanguage is missing/invalid, infer from the message language.
-Do not return language codes; return readable names like English, Spanish, French, Arabic, Chinese.
+Do not return language codes; return readable names like English, Spanish, French, Arabic.
 `
         },
         {
