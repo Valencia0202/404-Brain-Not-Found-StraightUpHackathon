@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sage Step AI</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1>Sage Step</h1>
+        <nav>
+          <button class="nav-btn active" data-panel="chat-panel">Chat</button>
+          <button class="nav-btn" data-panel="settings-panel">Settings</button>
+          <button class="nav-btn" data-panel="dashboard-panel">Dashboard</button>
+        </nav>
+        <p class="small">Hackathon mode: all core features wired.</p>
+      </aside>
+
+      <main class="content">
+        <section id="chat-panel" class="panel active">
+          <h2>AI Tutor Chat</h2>
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+          <form id="chat-form" class="chat-row">
+            <label class="attach-btn" title="Attach file">
+              📎
+              <input id="file-input" type="file" />
+            </label>
+            <select id="upload-mode" class="inline-select" title="Upload mode">
+              <option value="summarise">Summarise</option>
+              <option value="guide">Guide</option>
+            </select>
+            <input id="chat-input" type="text" placeholder="Ask for guidance (no final answers)..." required />
+            <button id="upload-in-chat" type="button">Upload</button>
+            <button type="submit">Send</button>
+          </form>
+          <div id="chat-meta" class="small"></div>
+        </section>
+
+        <section id="settings-panel" class="panel">
+          <h2>Settings</h2>
+          <form id="settings-form" class="stack">
+            <label>
+              Language
+              <input id="language" type="text" placeholder="e.g. English, Malay, Spanish" />
+            </label>
+            <label>
+              Hint Level
+              <select id="hintLevel">
+                <option value="1">1 - Light hints</option>
+                <option value="2">2 - Guided steps</option>
+                <option value="3">3 - More scaffolding</option>
+              </select>
+            </label>
+            <label>
+              Personality
+              <select id="personality">
+                <option value="friendly">Friendly</option>
+                <option value="strict">Strict</option>
+                <option value="encouraging">Encouraging</option>
+              </select>
+            </label>
+            <button type="submit">Save Settings</button>
+          </form>
+          <p id="settings-status" class="small"></p>
+        </section>
+
+        <section id="dashboard-panel" class="panel">
+          <h2>Live Metrics Dashboard</h2>
+          <p class="small">Auto-refreshes every 2 seconds while this panel is open.</p>
+          <div id="dashboard-summary" class="small"></div>
+          <div id="dashboard-users" class="cards"></div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
