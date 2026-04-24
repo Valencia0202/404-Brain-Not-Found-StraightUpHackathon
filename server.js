@@ -48,7 +48,8 @@ app.post("/chat", async (req, res) => {
         directAnswerRequests: 0,
         followUpDepth: 0,
         lastMessages: [],
-        profile: "unknown"
+        lastIntent: "learning",
+        profile: "average"
       };
     }
 
@@ -71,6 +72,10 @@ app.post("/chat", async (req, res) => {
 
     if (profile.profile === "avoidant") {
       policyMode = "strict";
+          } else if (profile.profile === "struggling") {
+      policyMode = "guided";
+    } else if (profile.profile === "engaged") {
+      policyMode = "socratic";
     }
 
     // anti step-extraction abuse
@@ -248,6 +253,32 @@ Only guide learning.
     });
   }
 });
+
+// ---------------- DASHBOARD DATA ----------------
+app.get("/dashboard-data", (req, res) => {
+  const users = Object.entries(global.studentProfiles).map(([userId, profile]) => ({
+    userId,
+    profile: profile.profile,
+    intent: profile.lastIntent || "learning",
+    policyMode:
+      profile.profile === "avoidant"
+        ? "strict"
+        : profile.profile === "struggling"
+          ? "guided"
+          : profile.profile === "engaged"
+            ? "socratic"
+            : "normal",
+    attempts: profile.attempts,
+    hintRequests: profile.hintRequests,
+    followUpDepth: profile.followUpDepth
+  }));
+
+  res.json({
+    totalUsers: users.length,
+    users
+  });
+});
+
 
 // ---------------- START SERVER ----------------
 app.listen(process.env.PORT || 3000, () => {
