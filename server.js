@@ -8,6 +8,7 @@ import pdf from "pdf-parse";
 import { classifyIntent } from "./ai/intent.js";
 import { analyzeBehavior, classifyStudent } from "./ai/profiler.js";
 import { validateOutput } from "./utils/validator.js";
+import { resolveResponseLanguage } from "./ai/language.js";
 
 dotenv.config();
 
@@ -33,9 +34,9 @@ app.post("/chat", async (req, res) => {
   try {
     const {
       message,
-      hintLevel = "1",
-      personality = "friendly",
-      language = "en"
+      hintLevel,
+      personality,
+      language
     } = req.body;
 
     const userKey = req.ip;
@@ -50,10 +51,25 @@ app.post("/chat", async (req, res) => {
         lastMessages: [],
         lastIntent: "learning",
         profile: "average"
+        settings: {
+          language: "English",
+          hintLevel: "1",
+          personality: "friendly"
+        }
       };
     }
 
+
     let profile = global.studentProfiles[userKey];
+  
+    const effectiveSettings = {
+      ...profile.settings,
+      ...(hintLevel ? { hintLevel } : {}),
+      ...(personality ? { personality } : {}),
+      ...(language ? { language } : {})
+    };
+
+    profile.settings = effectiveSettings;
 
     // ---------------- INTENT ----------------
     const intentData = await classifyIntent(client, message);
@@ -98,16 +114,22 @@ app.post("/chat", async (req, res) => {
       }
     }
 
-    // ---------------- SYSTEM PROMPT ----------------
+      // ---------------- SYSTEM PROMPT ----------------
+    const responseLanguage = await resolveResponseLanguage(
+      client,
+      effectiveSettings.language,
+      message
+    );
+
     const systemPrompt = `
 You are Sage Step, an AI tutor.
 
 Core rule:
 Never give final answers.
 
-Language: ${language}
-Hint level: ${hintLevel}
-Personality: ${personality}
+Language: ${responseLanguage}
+Hint level: ${effectiveSettings.hintLevel}
+Personality: ${effectiveSettings.personality}
 
 Policy mode: ${policyMode}
 Student profile: ${profile.profile}
@@ -143,7 +165,8 @@ Rules:
       meta: {
         intent,
         profile: profile.profile,
-        policyMode
+        policyMode,
+        responseLanguage
       }
     });
 
@@ -279,6 +302,90 @@ app.get("/dashboard-data", (req, res) => {
   });
 });
 
+// ---------------- SETTINGS ----------------
+app.get("/settings", (req, res) => {
+  const userKey = req.ip;
+  const profile = global.studentProfiles[userKey];
+
+  if (!profile) {
+    return res.json({
+      settings: {
+        language: "English",
+        hintLevel: "1",
+        personality: "friendly"
+      }
+    });
+  }
+
+  res.json({ settings: profile.settings });
+});
+
+app.post("/settings", async (req, res) => {
+  const userKey = req.ip;
+
+  if (!global.studentProfiles[userKey]) {
+    global.studentProfiles[userKey] = {
+      attempts: 0,
+      hintRequests: 0,
+      directAnswerRequests: 0,
+      followUpDepth: 0,
+      lastMessages: [],
+      lastIntent: "learning",
+      profile: "average",
+      settings: {
+        language: "English",
+        hintLevel: "1",
+        personality: "friendly"
+      }
+    };
+  }
+
+  const profile = global.studentProfiles[userKey];
+  const { language, hintLevel, personality, sampleMessage = "" } = req.body;
+
+  const resolvedLanguage = await resolveResponseLanguage(
+    client,
+    language || profile.settings.language,
+    sampleMessage
+  );
+
+  profile.settings = {
+    language: resolvedLanguage,
+    hintLevel: hintLevel || profile.settings.hintLevel,
+    personality: personality || profile.settings.personality
+  };
+
+  res.json({
+    message: "Settings updated successfully.",
+    settings: profile.settings
+  });
+});
+
+
+// ---------------- DASHBOARD DATA ----------------
+app.get("/dashboard-data", (req, res) => {
+  const users = Object.entries(global.studentProfiles).map(([userId, profile]) => ({
+    userId,
+    profile: profile.profile,
+    intent: profile.lastIntent || "learning",
+    policyMode:
+      profile.profile === "avoidant"
+        ? "strict"
+        : profile.profile === "struggling"
+          ? "guided"
+          : profile.profile === "engaged"
+            ? "socratic"
+            : "normal",
+    attempts: profile.attempts,
+    hintRequests: profile.hintRequests,
+    followUpDepth: profile.followUpDepth
+  }));
+
+  res.json({
+    totalUsers: users.length,
+    users
+  });
+});
 
 // ---------------- START SERVER ----------------
 app.listen(process.env.PORT || 3000, () => {
