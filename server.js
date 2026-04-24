@@ -56,7 +56,7 @@ app.post("/chat", async (req, res) => {
         followUpDepth: 0,
         lastMessages: [],
         lastIntent: "learning",
-        profile: "average"
+        profile: "average",
         settings: {
           language: "English",
           hintLevel: "1",
@@ -283,30 +283,7 @@ Only guide learning.
   }
 });
 
-// ---------------- DASHBOARD DATA ----------------
-app.get("/dashboard-data", (req, res) => {
-  const users = Object.entries(global.studentProfiles).map(([userId, profile]) => ({
-    userId,
-    profile: profile.profile,
-    intent: profile.lastIntent || "learning",
-    policyMode:
-      profile.profile === "avoidant"
-        ? "strict"
-        : profile.profile === "struggling"
-          ? "guided"
-          : profile.profile === "engaged"
-            ? "socratic"
-            : "normal",
-    attempts: profile.attempts,
-    hintRequests: profile.hintRequests,
-    followUpDepth: profile.followUpDepth
-  }));
 
-  res.json({
-    totalUsers: users.length,
-    users
-  });
-});
 
 // ---------------- SETTINGS ----------------
 app.get("/settings", (req, res) => {
