@@ -28,7 +28,7 @@ export function analyzeBehavior(profile, message, intent) {
   profile.lastIntent = intent;
   profile.lastMessages.push(message);
 
-  if (profile.lastMessages.length > 5) {
+   if (profile.lastMessages.length > 5) {
     profile.lastMessages.shift();
   }
 
@@ -47,7 +47,7 @@ export function classifyStudent(profile) {
     return "avoidant";
   }
 
-  if (hintRequests >= 2 && attempts > 0) {
+ if (hintRequests >= 2 && attempts > 0) {
     return "struggling";
   }
 
