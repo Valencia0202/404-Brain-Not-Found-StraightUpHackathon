@@ -35,6 +35,7 @@
 
       <main class="content">
 
+        <!-- CHAT PANEL -->
         <section id="chat-panel" class="panel active">
           <div class="chat-header-bar">
             <div>
@@ -75,36 +76,36 @@
             </div>
           </div>
 
-          <div class="chat-section">
+          <div class="chat-section" id="chat-section">
             <div class="chat-section-header">
               <h3 class="section-label" style="margin:0">Chat</h3>
               <div class="chat-controls-top">
-                <select id="hintLevel" class="inline-select">
+                <select id="hintLevel" class="inline-select" title="How much help do you want?">
                   <option value="1">Light Hint</option>
                   <option value="2">Guided Steps</option>
-                  <option value="3">More Scaffolding</option>
+                  <option value="3">More Help</option>
                 </select>
-                <select id="personality" class="inline-select">
+                <select id="personality" class="inline-select" title="Tutor tone">
                   <option value="friendly">Calm</option>
                   <option value="encouraging">Encouraging</option>
                   <option value="strict">Strict</option>
                 </select>
-                <button class="expand-btn" id="expand-btn" title="Expand chat">⤢</button>
+                <button class="expand-btn" id="expand-btn" title="Expand chat to full screen">⤢</button>
               </div>
             </div>
 
             <div id="chat-log" class="chat-log" aria-live="polite"></div>
 
             <form id="chat-form" class="chat-row">
-              <label class="attach-btn" title="Attach file">
+              <label class="attach-btn" title="Attach a file">
                 📎
                 <input id="file-input" type="file" />
               </label>
-              <select id="upload-mode" class="inline-select" title="Upload mode">
+              <select id="upload-mode" class="inline-select" title="What to do with the file">
                 <option value="summarise">Summarise</option>
                 <option value="guide">Guide</option>
               </select>
-              <input id="chat-input" type="text" placeholder="Ask for guidance (no final answers)..." required />
+              <input id="chat-input" type="text" placeholder="Ask for guidance..." required />
               <button id="upload-in-chat" type="button" class="secondary-btn">Upload</button>
               <button type="submit" class="send-btn">Send</button>
             </form>
@@ -112,60 +113,82 @@
           </div>
         </section>
 
+        <!-- PROGRESS PANEL -->
         <section id="progress-panel" class="panel">
           <div class="chat-header-bar">
             <div>
               <h2 class="greeting">Progress</h2>
-              <p class="greeting-sub">Track how students are learning</p>
+              <p class="greeting-sub">See how each learner is doing</p>
             </div>
           </div>
-          <div class="content-card">
-            <p id="dashboard-summary" class="small"></p>
+          <div class="progress-scroll">
+            <div id="progress-table-container" class="progress-table-wrap">
+              <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <div class="empty-state-title">No learner data yet</div>
+                <p>Progress will appear here once students start chatting.</p>
+              </div>
+            </div>
           </div>
         </section>
 
+        <!-- STATS PANEL -->
         <section id="stats-panel" class="panel">
           <div class="chat-header-bar">
             <div>
-              <h2 class="greeting">Live Metrics</h2>
-              <p class="greeting-sub">Auto-refreshes every 2 seconds</p>
+              <h2 class="greeting">Stats</h2>
+              <p class="greeting-sub">Live snapshot of all learners</p>
             </div>
           </div>
-          <div id="dashboard-users" class="cards"></div>
+          <div class="stats-scroll">
+            <div class="stats-summary-row" id="stats-summary-row"></div>
+            <div class="learner-grid" id="dashboard-users"></div>
+          </div>
         </section>
 
+        <!-- SETTINGS PANEL -->
         <section id="settings-panel" class="panel">
           <div class="chat-header-bar">
             <div>
               <h2 class="greeting">Settings</h2>
-              <p class="greeting-sub">Customise your learning experience</p>
+              <p class="greeting-sub">Personalise your learning experience</p>
             </div>
           </div>
           <div class="content-card settings-card">
             <form id="settings-form" class="stack">
+
               <label class="field-label">
                 Language
+                <span class="field-hint">Responses will be in this language</span>
                 <input id="language" type="text" placeholder="e.g. English, Malay, Spanish" />
               </label>
+
               <label class="field-label">
-                Hint Level
+                How much help do you want?
+                <span class="field-hint">More scaffolding gives you more guidance step by step</span>
                 <select id="hintLevelSettings">
-                  <option value="1">1 - Light hints</option>
-                  <option value="2">2 - Guided steps</option>
-                  <option value="3">3 - More scaffolding</option>
+                  <option value="1">Just a nudge — give me a small hint</option>
+                  <option value="2">Walk me through it — step by step</option>
+                  <option value="3">I need more support — explain more fully</option>
                 </select>
               </label>
+
               <label class="field-label">
-                Personality
+                Tutor personality
+                <span class="field-hint">How you'd like your tutor to communicate with you</span>
                 <select id="personalitySettings">
-                  <option value="friendly">Friendly</option>
-                  <option value="strict">Strict</option>
-                  <option value="encouraging">Encouraging</option>
+                  <option value="friendly">Calm &amp; relaxed</option>
+                  <option value="encouraging">Warm &amp; encouraging</option>
+                  <option value="strict">Direct &amp; to the point</option>
                 </select>
               </label>
-              <button type="submit" class="send-btn" style="width:fit-content;padding:10px 28px">Save Settings</button>
+
+              <div>
+                <button type="submit" class="send-btn" style="width:fit-content;padding:10px 28px">Save changes</button>
+                <p id="settings-status" class="small" style="margin-top:10px"></p>
+              </div>
+
             </form>
-            <p id="settings-status" class="small" style="margin-top:12px"></p>
           </div>
         </section>
 
