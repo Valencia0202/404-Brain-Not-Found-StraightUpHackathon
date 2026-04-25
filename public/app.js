@@ -10,11 +10,14 @@ const dashboardSummary = document.getElementById('dashboard-summary');
 const dashboardUsers = document.getElementById('dashboard-users');
 const fileInput = document.getElementById('file-input');
 const uploadInChatButton = document.getElementById('upload-in-chat');
+const modeCards = document.querySelectorAll('.mode-card');
 
 let dashboardTimer = null;
+let selectedMode = 'study';
 
+// ── PANEL SWITCHING ──
 function switchPanel(panelId) {
-  const panelExists = Array.from(panels).some((panel) => panel.id === panelId);
+  const panelExists = Array.from(panels).some((p) => p.id === panelId);
   const resolvedPanelId = panelExists ? panelId : 'chat-panel';
 
   navButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.panel === resolvedPanelId));
@@ -35,6 +38,23 @@ navButtons.forEach((btn) =>
   btn.addEventListener('click', () => switchPanel(btn.dataset.panel))
 );
 
+// ── MODE CARDS ──
+modeCards.forEach((card) => {
+  card.addEventListener('click', () => {
+    modeCards.forEach((c) => c.classList.remove('active-mode'));
+    card.classList.add('active-mode');
+    selectedMode = card.dataset.mode;
+
+    const uploadMode = document.getElementById('upload-mode');
+    if (selectedMode === 'summarise') {
+      uploadMode.value = 'summarise';
+    } else {
+      uploadMode.value = 'guide';
+    }
+  });
+});
+
+// ── MESSAGES ──
 function appendMessage(role, text) {
   const line = document.createElement('div');
   line.className = 'msg';
@@ -43,14 +63,22 @@ function appendMessage(role, text) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+// ── LOAD SETTINGS ──
 async function loadSettings() {
   const response = await fetch('/settings');
   const data = await response.json();
   document.getElementById('language').value = data.settings.language || 'English';
-  document.getElementById('hintLevel').value = data.settings.hintLevel || '1';
-  document.getElementById('personality').value = data.settings.personality || 'friendly';
+
+  const hl = data.settings.hintLevel || '1';
+  const pers = data.settings.personality || 'friendly';
+
+  document.getElementById('hintLevel').value = hl;
+  document.getElementById('personality').value = pers;
+  document.getElementById('hintLevelSettings').value = hl;
+  document.getElementById('personalitySettings').value = pers;
 }
 
+// ── CHAT SUBMIT ──
 chatForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const message = chatInput.value.trim();
@@ -66,20 +94,25 @@ chatForm.addEventListener('submit', async (event) => {
     personality: document.getElementById('personality').value
   };
 
-  const response = await fetch('/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  try {
+    const response = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-  const data = await response.json();
-  appendMessage('Tutor', data.reply || 'No response.');
+    const data = await response.json();
+    appendMessage('Tutor', data.reply || 'No response.');
 
-  if (data.meta) {
-    chatMeta.textContent = `intent: ${data.meta.intent} | profile: ${data.meta.profile} | policy: ${data.meta.policyMode} | language: ${data.meta.responseLanguage}`;
+    if (data.meta) {
+      chatMeta.textContent = `intent: ${data.meta.intent} | profile: ${data.meta.profile} | policy: ${data.meta.policyMode} | language: ${data.meta.responseLanguage}`;
+    }
+  } catch (err) {
+    appendMessage('System', 'Error contacting server.');
   }
 });
 
+// ── FILE UPLOAD ──
 uploadInChatButton.addEventListener('click', async () => {
   const file = fileInput.files[0];
   if (!file) {
@@ -93,111 +126,66 @@ uploadInChatButton.addEventListener('click', async () => {
   formData.append('file', file);
   formData.append('mode', document.getElementById('upload-mode').value);
 
-  const response = await fetch('/upload', {
-    method: 'POST',
-    body: formData
-  });
+  try {
+    const response = await fetch('/upload', { method: 'POST', body: formData });
+    const data = await response.json();
+    appendMessage('Tutor', data.reply || data.error || 'No output from upload endpoint.');
+  } catch (err) {
+    appendMessage('System', 'Upload failed.');
+  }
 
-  const data = await response.json();
-  appendMessage('Tutor', data.reply || data.error || 'No output from upload endpoint.');
   fileInput.value = '';
 });
 
+// ── SETTINGS SAVE ──
 settingsForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   settingsStatus.textContent = 'Saving...';
 
+  const hl = document.getElementById('hintLevelSettings').value;
+  const pers = document.getElementById('personalitySettings').value;
+
   const payload = {
     language: document.getElementById('language').value,
-    hintLevel: document.getElementById('hintLevel').value,
-    personality: document.getElementById('personality').value,
-    sampleMessage: chatInput.value || ''
+    hintLevel: hl,
+    personality: pers,
+    sampleMessage: ''
   };
 
-  const response = await fetch('/settings', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
+  try {
+    const response = await fetch('/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
 
-  const data = await response.json();
-  settingsStatus.textContent = data.message || 'Saved.';
+    const data = await response.json();
+    settingsStatus.textContent = data.message || 'Saved.';
+
+    // Sync chat panel dropdowns
+    document.getElementById('hintLevel').value = hl;
+    document.getElementById('personality').value = pers;
+  } catch (err) {
+    settingsStatus.textContent = 'Failed to save.';
+  }
 });
 
-// ---- DASHBOARD: used by both Progress and Stats panels ----
+// ── DASHBOARD ──
 function renderDashboard(data) {
-  // Progress panel: summary + per-user profile rows
   dashboardSummary.innerHTML = `
     <strong>Total users: ${data.totalUsers}</strong>
-    <table style="width:100%;margin-top:12px;border-collapse:collapse">
+    <table style="width:100%;margin-top:16px;border-collapse:collapse;font-size:0.85rem">
       <thead>
-        <tr>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">User</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Profile</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Intent</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Policy</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Attempts</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Hints</th>
-          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Follow-ups</th>
+        <tr style="color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border)">
+          <th style="padding:8px">User</th>
+          <th style="padding:8px">Profile</th>
+          <th style="padding:8px">Intent</th>
+          <th style="padding:8px">Policy</th>
+          <th style="padding:8px">Attempts</th>
+          <th style="padding:8px">Hints</th>
+          <th style="padding:8px">Follow-ups</th>
         </tr>
       </thead>
       <tbody>
         ${data.users.map((u) => `
-          <tr>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.userId}</td>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.profile}</td>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.intent}</td>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.policyMode}</td>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.attempts}</td>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.hintRequests}</td>
-            <td style="padding:6px;border-bottom:1px solid #eee">${u.followUpDepth}</td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // Stats panel: card grid
-  dashboardUsers.innerHTML = '';
-  data.users.forEach((user) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.innerHTML = `
-      <strong>${user.userId}</strong>
-      <div>Profile: ${user.profile}</div>
-      <div>Intent: ${user.intent}</div>
-      <div>Policy: ${user.policyMode}</div>
-      <div>Attempts: ${user.attempts}</div>
-      <div>Hint requests: ${user.hintRequests}</div>
-      <div>Follow-up depth: ${user.followUpDepth}</div>
-    `;
-    dashboardUsers.appendChild(card);
-  });
-}
-
-async function pollDashboard() {
-  const response = await fetch('/dashboard-data');
-  const data = await response.json();
-  renderDashboard(data);
-}
-
-function startDashboardPolling() {
-  if (dashboardTimer) return;
-  pollDashboard();
-  dashboardTimer = setInterval(pollDashboard, 2000);
-}
-
-function stopDashboardPolling() {
-  if (!dashboardTimer) return;
-  clearInterval(dashboardTimer);
-  dashboardTimer = null;
-}
-
-loadSettings();
-const initialPanel = window.location.hash.replace('#', '') || 'chat-panel';
-switchPanel(initialPanel);
-
-window.addEventListener('hashchange', () => {
-  const panelFromHash = window.location.hash.replace('#', '') || 'chat-panel';
-  switchPanel(panelFromHash);
-});
+          <tr style="border-bottom:1px solid var(--border-li
