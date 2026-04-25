@@ -70,7 +70,12 @@ if (expandBtn) {
 }
 
 // ── MESSAGE RENDERING ──
-function appendMessage(role, text) {
+function appendMessage(role, text, isCorrect = false) {
+  if (isCorrect) {
+    appendCorrectReveal(text);
+    return;
+  }
+
   const isUser = role === 'You';
   const rowClass = isUser ? 'user' : 'ai';
   const avatarEmoji = isUser ? '🧑' : '🧠';
@@ -86,36 +91,47 @@ function appendMessage(role, text) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function showTyping() {
+function appendCorrectReveal(text) {
+  // Parse the three sections out of the formatted response
+  const lines = text.split('\n').filter(l => l.trim());
+
   const row = document.createElement('div');
   row.className = 'msg-row ai';
-  row.id = 'typing-row';
+
+  // Render with special reveal card styling
   row.innerHTML = `
     <div class="msg-avatar">🧠</div>
-    <div class="msg-bubble">
-      <div class="typing-dots">
-        <span></span><span></span><span></span>
-      </div>
-    </div>
+    <div class="reveal-card">${formatRevealText(text)}</div>
   `;
+
   chatLog.appendChild(row);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function removeTyping() {
-  const el = document.getElementById('typing-row');
-  if (el) el.remove();
-}
+function formatRevealText(text) {
+  // Convert the structured response into styled HTML
+  const lines = text.split('\n');
+  let html = '';
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/\n/g, '<br>');
-}
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) { html += '<div style="height:6px"></div>'; continue; }
 
+    if (trimmed.startsWith('🎉')) {
+      html += `<div class="reveal-congrats">${escapeHtml(trimmed)}</div>`;
+    } else if (trimmed.startsWith('✅')) {
+      html += `<div class="reveal-answer">${escapeHtml(trimmed)}</div>`;
+    } else if (trimmed.startsWith('🗺️')) {
+      html += `<div class="reveal-steps-label">${escapeHtml(trimmed)}</div>`;
+    } else if (/^\d+\./.test(trimmed)) {
+      html += `<div class="reveal-step">${escapeHtml(trimmed)}</div>`;
+    } else {
+      html += `<div class="reveal-line">${escapeHtml(trimmed)}</div>`;
+    }
+  }
+
+  return html;
+}
 // ── HELPERS ──
 function val(id) {
   const el = document.getElementById(id);
@@ -170,14 +186,13 @@ if (chatForm) {
       });
       const data = await response.json();
       removeTyping();
-      appendMessage('Tutor', data.reply || 'No response.');
+      appendMessage('Tutor', data.reply || 'No response.', data.meta?.correct === true);
     } catch (err) {
       removeTyping();
       appendMessage('System', 'Could not reach the server. Please try again.');
     }
   });
 }
-
 // ── FILE UPLOAD ──
 if (uploadInChatButton) {
   uploadInChatButton.addEventListener('click', async () => {
