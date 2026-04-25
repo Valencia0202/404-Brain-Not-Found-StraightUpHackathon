@@ -124,10 +124,41 @@ settingsForm.addEventListener('submit', async (event) => {
   settingsStatus.textContent = data.message || 'Saved.';
 });
 
+// ---- DASHBOARD: used by both Progress and Stats panels ----
 function renderDashboard(data) {
-  dashboardSummary.textContent = `Total users: ${data.totalUsers}`;
-  dashboardUsers.innerHTML = '';
+  // Progress panel: summary + per-user profile rows
+  dashboardSummary.innerHTML = `
+    <strong>Total users: ${data.totalUsers}</strong>
+    <table style="width:100%;margin-top:12px;border-collapse:collapse">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">User</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Profile</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Intent</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Policy</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Attempts</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Hints</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid #ccc">Follow-ups</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.users.map((u) => `
+          <tr>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.userId}</td>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.profile}</td>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.intent}</td>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.policyMode}</td>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.attempts}</td>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.hintRequests}</td>
+            <td style="padding:6px;border-bottom:1px solid #eee">${u.followUpDepth}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 
+  // Stats panel: card grid
+  dashboardUsers.innerHTML = '';
   data.users.forEach((user) => {
     const card = document.createElement('div');
     card.className = 'card';
