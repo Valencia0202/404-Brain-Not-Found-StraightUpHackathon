@@ -226,11 +226,12 @@ ${activeQuestionBlock}
 Rules:
 - Guide thinking, do not solve.
 - Stop before the final answer unless the student has clearly completed the full solution on their own.
-- If the student independently completes the full solution, you may confirm whether their final answer is correct.
-- Do not confirm guessed answers without shown work.
-- Ask reflective questions.
+- If the student has already shown the full solving process or reached the final step independently, you may briefly confirm whether their final answer is correct.
+- When confirming, do not add new solving steps unless the student asks for them.
+- Do not confirm guessed answers without shown work or prior steps in context.
+- Ask reflective questions unless the student is only asking for answer-checking after finishing.
 - Give one small next step at a time.
-- Keep the reply concise and centered on the active question.
+- Keep the reply concise and centered on the active question
 `;
 }
 
@@ -275,18 +276,21 @@ app.post("/chat", async (req, res) => {
 
     // ---------------- POLICY ----------------
     let policyMode = "normal";
-
-    if (intent === "cheating" || intent === "verification") {
+    
+    if (intent === "cheating") {
       policyMode = "strict";
+    } else if (intent === "verification") {
+      policyMode = "guided";
     }
-
-    if (profile.profile === "avoidant") {
+    
+    if (profile.profile === "avoidant" && intent !== "verification") {
       policyMode = "strict";
     } else if (profile.profile === "struggling") {
       policyMode = "guided";
     } else if (profile.profile === "engaged") {
       policyMode = "socratic";
     }
+
 
     // anti step-extraction abuse
     if (profile.followUpDepth > 5) {
@@ -351,9 +355,24 @@ app.post("/chat", async (req, res) => {
     // ---------------- OUTPUT VALIDATION ----------------
     const check = await validateOutput(client, reply);
 
-    if (!check.safe) {
+    const recentUserTurns = conversationWindow
+      .filter((item) => item.role === "user")
+      .map((item) => item.content.toLowerCase());
+    
+    const hasShownWorkInContext =
+      recentUserTurns.length >= 2 ||
+      recentUserTurns.some((text) => text.includes("="));
+    
+    const isAllowedConfirmation =
+      intent === "verification" &&
+      !!profile.activeQuestion &&
+      hasShownWorkInContext &&
+      /correct|that'?s right|yes[, ]|yes\.|well done|nice work|exactly/i.test(reply);
+    
+    if (!check.safe && !isAllowedConfirmation) {
       reply = "Let’s focus on the method. What step do you think comes next?";
     }
+
 
     // ---------------- SAVE CONTEXT ----------------
     profile.chatHistory = [
