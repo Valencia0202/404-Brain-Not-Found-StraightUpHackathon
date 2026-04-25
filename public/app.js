@@ -195,3 +195,70 @@ function renderDashboard(data) {
             <th style="padding:8px">Attempts</th>
             <th style="padding:8px">Hints</th>
             <th style="padding:8px">Follow-ups</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.users.map((u) => `
+            <tr style="border-bottom:1px solid var(--border-light)">
+              <td style="padding:8px">${u.userId}</td>
+              <td style="padding:8px">${u.profile}</td>
+              <td style="padding:8px">${u.intent}</td>
+              <td style="padding:8px">${u.policyMode}</td>
+              <td style="padding:8px">${u.attempts}</td>
+              <td style="padding:8px">${u.hintRequests}</td>
+              <td style="padding:8px">${u.followUpDepth}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  }
+
+  if (dashboardUsers) {
+    dashboardUsers.innerHTML = '';
+    data.users.forEach((user) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <strong>${user.userId}</strong>
+        <div>Profile: ${user.profile}</div>
+        <div>Intent: ${user.intent}</div>
+        <div>Policy: ${user.policyMode}</div>
+        <div>Attempts: ${user.attempts}</div>
+        <div>Hint requests: ${user.hintRequests}</div>
+        <div>Follow-up depth: ${user.followUpDepth}</div>
+      `;
+      dashboardUsers.appendChild(card);
+    });
+  }
+}
+
+async function pollDashboard() {
+  try {
+    const response = await fetch('/dashboard-data');
+    const data = await response.json();
+    renderDashboard(data);
+  } catch (err) {}
+}
+
+function startDashboardPolling() {
+  if (dashboardTimer) return;
+  pollDashboard();
+  dashboardTimer = setInterval(pollDashboard, 2000);
+}
+
+function stopDashboardPolling() {
+  if (!dashboardTimer) return;
+  clearInterval(dashboardTimer);
+  dashboardTimer = null;
+}
+
+// ── INIT ──
+loadSettings();
+const initialPanel = window.location.hash.replace('#', '') || 'chat-panel';
+switchPanel(initialPanel);
+
+window.addEventListener('hashchange', () => {
+  const panelFromHash = window.location.hash.replace('#', '') || 'chat-panel';
+  switchPanel(panelFromHash);
+});
