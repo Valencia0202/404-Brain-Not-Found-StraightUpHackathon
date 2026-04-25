@@ -4,82 +4,173 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sage Step AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <div class="layout">
+
       <aside class="sidebar">
-        <h1>Sage Step</h1>
-        <nav>
-          <button class="nav-btn active" data-panel="chat-panel">Chat</button>
-          <button class="nav-btn" data-panel="progress-panel">Progress</button>
-          <button class="nav-btn" data-panel="stats-panel">Stats</button>
-          <button class="nav-btn" data-panel="settings-panel">Settings</button>
-        </nav>
-        <p class="small">Hackathon mode: all core features wired.</p>
+        <div class="sidebar-top">
+          <div class="brand">
+            <div class="brand-icon">🧠</div>
+            <div>
+              <div class="brand-name">Sage Step</div>
+              <div class="brand-tagline">Guiding minds, not giving answers.</div>
+            </div>
+          </div>
+          <nav>
+            <button class="nav-btn active" data-panel="chat-panel"><span class="nav-icon">💬</span> Chat</button>
+            <button class="nav-btn" data-panel="progress-panel"><span class="nav-icon">📋</span> Progress</button>
+            <button class="nav-btn" data-panel="stats-panel"><span class="nav-icon">🏅</span> Stats</button>
+            <button class="nav-btn" data-panel="settings-panel"><span class="nav-icon">⚙️</span> Settings</button>
+          </nav>
+        </div>
+        <div class="sidebar-bottom">
+          <div class="sidebar-tip">🌱 Learning feels better when it's stress-free.</div>
+        </div>
       </aside>
 
       <main class="content">
-        <section id="chat-panel" class="panel active">
-          <h2>AI Tutor Chat</h2>
-          <div id="chat-log" class="chat-log" aria-live="polite"></div>
-          <form id="chat-form" class="chat-row">
-            <label class="attach-btn" title="Attach file">
-              📎
-              <input id="file-input" type="file" />
-            </label>
-            <select id="upload-mode" class="inline-select" title="Upload mode">
-              <option value="summarise">Summarise</option>
-              <option value="guide">Guide</option>
-            </select>
-            <input id="chat-input" type="text" placeholder="Ask for guidance (no final answers)..." required />
-            <button id="upload-in-chat" type="button">Upload</button>
-            <button type="submit">Send</button>
-          </form>
-          <div id="chat-meta" class="small"></div>
-        </section>
 
-        <section id="settings-panel" class="panel">
-          <h2>Settings</h2>
-          <form id="settings-form">
-            <label>
-              Language
-              <input id="language" type="text" placeholder="e.g. English, Malay, Spanish" />
-            </label>
-            <label>
-              Hint Level
-              <select id="hintLevel">
-                <option value="1">1 - Light hints</option>
-                <option value="2">2 - Guided steps</option>
-                <option value="3">3 - More scaffolding</option>
+        <section id="chat-panel" class="panel active">
+          <div class="chat-header-bar">
+            <div>
+              <h2 class="greeting">Hey there 👋</h2>
+              <p class="greeting-sub">What would you like to learn today?</p>
+            </div>
+            <div class="streak-badge">🔥 <span id="streak-count">1</span> Day Streak</div>
+          </div>
+
+          <div class="mode-section">
+            <h3 class="section-label">Choose a mode</h3>
+            <div class="mode-cards">
+              <button class="mode-card active-mode" data-mode="study">
+                <div class="mode-icon">🌿</div>
+                <div class="mode-title">Study Help</div>
+                <div class="mode-desc">Get hints and understand better</div>
+              </button>
+              <button class="mode-card" data-mode="coding">
+                <div class="mode-icon">⌨️</div>
+                <div class="mode-title">Coding Help</div>
+                <div class="mode-desc">Understand logic, not copy code</div>
+              </button>
+              <button class="mode-card" data-mode="essay">
+                <div class="mode-icon">✏️</div>
+                <div class="mode-title">Essay Help</div>
+                <div class="mode-desc">Improve ideas and structure</div>
+              </button>
+              <button class="mode-card" data-mode="summarise">
+                <div class="mode-icon">📝</div>
+                <div class="mode-title">Summarise Notes</div>
+                <div class="mode-desc">Turn notes into clear key points</div>
+              </button>
+              <button class="mode-card" data-mode="quiz">
+                <div class="mode-icon">❓</div>
+                <div class="mode-title">Quiz Me</div>
+                <div class="mode-desc">Test yourself and learn actively</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="chat-section">
+            <div class="chat-section-header">
+              <h3 class="section-label" style="margin:0">Chat</h3>
+              <div class="chat-controls-top">
+                <select id="hintLevel" class="inline-select">
+                  <option value="1">Light Hint</option>
+                  <option value="2">Guided Steps</option>
+                  <option value="3">More Scaffolding</option>
+                </select>
+                <select id="personality" class="inline-select">
+                  <option value="friendly">Calm</option>
+                  <option value="encouraging">Encouraging</option>
+                  <option value="strict">Strict</option>
+                </select>
+                <button class="expand-btn" id="expand-btn" title="Expand chat">⤢</button>
+              </div>
+            </div>
+
+            <div id="chat-log" class="chat-log" aria-live="polite"></div>
+
+            <form id="chat-form" class="chat-row">
+              <label class="attach-btn" title="Attach file">
+                📎
+                <input id="file-input" type="file" />
+              </label>
+              <select id="upload-mode" class="inline-select" title="Upload mode">
+                <option value="summarise">Summarise</option>
+                <option value="guide">Guide</option>
               </select>
-            </label>
-            <label>
-              Personality
-              <select id="personality">
-                <option value="friendly">Friendly</option>
-                <option value="strict">Strict</option>
-                <option value="encouraging">Encouraging</option>
-              </select>
-            </label>
-            <button type="submit">Save Settings</button>
-          </form>
-          <p id="settings-status" class="small"></p>
+              <input id="chat-input" type="text" placeholder="Ask for guidance (no final answers)..." required />
+              <button id="upload-in-chat" type="button" class="secondary-btn">Upload</button>
+              <button type="submit" class="send-btn">Send</button>
+            </form>
+            <div id="chat-meta" class="chat-meta-bar"></div>
+          </div>
         </section>
 
         <section id="progress-panel" class="panel">
-          <h2>Progress</h2>
-          <p id="dashboard-summary" class="small"></p>
+          <div class="chat-header-bar">
+            <div>
+              <h2 class="greeting">Progress</h2>
+              <p class="greeting-sub">Track how students are learning</p>
+            </div>
+          </div>
+          <div class="content-card">
+            <p id="dashboard-summary" class="small"></p>
+          </div>
         </section>
 
         <section id="stats-panel" class="panel">
-          <h2>Live Metrics Dashboard</h2>
-          <p class="small">Auto-refreshes every 2 seconds while this panel is open.</p>
+          <div class="chat-header-bar">
+            <div>
+              <h2 class="greeting">Live Metrics</h2>
+              <p class="greeting-sub">Auto-refreshes every 2 seconds</p>
+            </div>
+          </div>
           <div id="dashboard-users" class="cards"></div>
         </section>
+
+        <section id="settings-panel" class="panel">
+          <div class="chat-header-bar">
+            <div>
+              <h2 class="greeting">Settings</h2>
+              <p class="greeting-sub">Customise your learning experience</p>
+            </div>
+          </div>
+          <div class="content-card settings-card">
+            <form id="settings-form" class="stack">
+              <label class="field-label">
+                Language
+                <input id="language" type="text" placeholder="e.g. English, Malay, Spanish" />
+              </label>
+              <label class="field-label">
+                Hint Level
+                <select id="hintLevelSettings">
+                  <option value="1">1 - Light hints</option>
+                  <option value="2">2 - Guided steps</option>
+                  <option value="3">3 - More scaffolding</option>
+                </select>
+              </label>
+              <label class="field-label">
+                Personality
+                <select id="personalitySettings">
+                  <option value="friendly">Friendly</option>
+                  <option value="strict">Strict</option>
+                  <option value="encouraging">Encouraging</option>
+                </select>
+              </label>
+              <button type="submit" class="send-btn" style="width:fit-content;padding:10px 28px">Save Settings</button>
+            </form>
+            <p id="settings-status" class="small" style="margin-top:12px"></p>
+          </div>
+        </section>
+
       </main>
     </div>
-
     <script type="module" src="/app.js"></script>
   </body>
 </html>
