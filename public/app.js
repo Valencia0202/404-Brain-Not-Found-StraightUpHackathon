@@ -16,18 +16,20 @@ let dashboardTimer = null;
 function switchPanel(panelId) {
   const panelExists = Array.from(panels).some((panel) => panel.id === panelId);
   const resolvedPanelId = panelExists ? panelId : 'chat-panel';
-  
- navButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.panel === resolvedPanelId));
+
+  navButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.panel === resolvedPanelId));
   panels.forEach((panel) => panel.classList.toggle('active', panel.id === resolvedPanelId));
 
-  if (resolvedPanelId === 'progress-panel' || resolvedPanelId === 'stats-panel') {    startDashboardPolling();
+  if (resolvedPanelId === 'progress-panel' || resolvedPanelId === 'stats-panel') {
+    startDashboardPolling();
   } else {
     stopDashboardPolling();
   }
-}
-if (window.location.hash !== `#${resolvedPanelId}`) {
+
+  if (window.location.hash !== `#${resolvedPanelId}`) {
     window.location.hash = resolvedPanelId;
   }
+}
 
 navButtons.forEach((btn) =>
   btn.addEventListener('click', () => switchPanel(btn.dataset.panel))
@@ -159,7 +161,6 @@ function stopDashboardPolling() {
   clearInterval(dashboardTimer);
   dashboardTimer = null;
 }
-
 
 loadSettings();
 const initialPanel = window.location.hash.replace('#', '') || 'chat-panel';
