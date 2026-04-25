@@ -44,13 +44,8 @@ modeCards.forEach((card) => {
     modeCards.forEach((c) => c.classList.remove('active-mode'));
     card.classList.add('active-mode');
     selectedMode = card.dataset.mode;
-
     const uploadMode = document.getElementById('upload-mode');
-    if (selectedMode === 'summarise') {
-      uploadMode.value = 'summarise';
-    } else {
-      uploadMode.value = 'guide';
-    }
+    if (uploadMode) uploadMode.value = selectedMode === 'summarise' ? 'summarise' : 'guide';
   });
 });
 
@@ -63,129 +58,140 @@ function appendMessage(role, text) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+// Safe helpers — won't crash if element is missing
+function val(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : '';
+}
+
+function setVal(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value;
+}
+
 // ── LOAD SETTINGS ──
 async function loadSettings() {
-  const response = await fetch('/settings');
-  const data = await response.json();
-  document.getElementById('language').value = data.settings.language || 'English';
+  try {
+    const response = await fetch('/settings');
+    const data = await response.json();
+    const hl = data.settings.hintLevel || '1';
+    const pers = data.settings.personality || 'friendly';
+    const lang = data.settings.language || 'English';
 
-  const hl = data.settings.hintLevel || '1';
-  const pers = data.settings.personality || 'friendly';
-
-  document.getElementById('hintLevel').value = hl;
-  document.getElementById('personality').value = pers;
-  document.getElementById('hintLevelSettings').value = hl;
-  document.getElementById('personalitySettings').value = pers;
+    setVal('language', lang);
+    setVal('hintLevel', hl);
+    setVal('personality', pers);
+    setVal('hintLevelSettings', hl);
+    setVal('personalitySettings', pers);
+  } catch (err) {
+    // server not ready, skip silently
+  }
 }
 
 // ── CHAT SUBMIT ──
-chatForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const message = chatInput.value.trim();
-  if (!message) return;
+if (chatForm) {
+  chatForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const message = chatInput.value.trim();
+    if (!message) return;
 
-  appendMessage('You', message);
-  chatInput.value = '';
+    appendMessage('You', message);
+    chatInput.value = '';
 
-  const payload = {
-    message,
-    language: document.getElementById('language').value,
-    hintLevel: document.getElementById('hintLevel').value,
-    personality: document.getElementById('personality').value
-  };
+    const payload = {
+      message,
+      language: val('language'),
+      hintLevel: val('hintLevel'),
+      personality: val('personality')
+    };
 
-  try {
-    const response = await fetch('/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      appendMessage('Tutor', data.reply || 'No response.');
 
-    const data = await response.json();
-    appendMessage('Tutor', data.reply || 'No response.');
-
-    if (data.meta) {
-      chatMeta.textContent = `intent: ${data.meta.intent} | profile: ${data.meta.profile} | policy: ${data.meta.policyMode} | language: ${data.meta.responseLanguage}`;
+      if (data.meta) {
+        chatMeta.textContent = `intent: ${data.meta.intent} | profile: ${data.meta.profile} | policy: ${data.meta.policyMode} | language: ${data.meta.responseLanguage}`;
+      }
+    } catch (err) {
+      appendMessage('System', 'Error contacting server.');
     }
-  } catch (err) {
-    appendMessage('System', 'Error contacting server.');
-  }
-});
+  });
+}
 
 // ── FILE UPLOAD ──
-uploadInChatButton.addEventListener('click', async () => {
-  const file = fileInput.files[0];
-  if (!file) {
-    appendMessage('System', 'Attach a file first using the 📎 button.');
-    return;
-  }
+if (uploadInChatButton) {
+  uploadInChatButton.addEventListener('click', async () => {
+    const file = fileInput.files[0];
+    if (!file) {
+      appendMessage('System', 'Attach a file first using the 📎 button.');
+      return;
+    }
 
-  appendMessage('You', `Uploaded file: ${file.name}`);
+    appendMessage('You', `Uploaded file: ${file.name}`);
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('mode', document.getElementById('upload-mode').value);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('mode', val('upload-mode'));
 
-  try {
-    const response = await fetch('/upload', { method: 'POST', body: formData });
-    const data = await response.json();
-    appendMessage('Tutor', data.reply || data.error || 'No output from upload endpoint.');
-  } catch (err) {
-    appendMessage('System', 'Upload failed.');
-  }
+    try {
+      const response = await fetch('/upload', { method: 'POST', body: formData });
+      const data = await response.json();
+      appendMessage('Tutor', data.reply || data.error || 'No output from upload endpoint.');
+    } catch (err) {
+      appendMessage('System', 'Upload failed.');
+    }
 
-  fileInput.value = '';
-});
+    fileInput.value = '';
+  });
+}
 
 // ── SETTINGS SAVE ──
-settingsForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  settingsStatus.textContent = 'Saving...';
+if (settingsForm) {
+  settingsForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (settingsStatus) settingsStatus.textContent = 'Saving...';
 
-  const hl = document.getElementById('hintLevelSettings').value;
-  const pers = document.getElementById('personalitySettings').value;
+    const hl = val('hintLevelSettings');
+    const pers = val('personalitySettings');
+    const lang = val('language');
 
-  const payload = {
-    language: document.getElementById('language').value,
-    hintLevel: hl,
-    personality: pers,
-    sampleMessage: ''
-  };
+    const payload = { language: lang, hintLevel: hl, personality: pers, sampleMessage: '' };
 
-  try {
-    const response = await fetch('/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
+    try {
+      const response = await fetch('/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      if (settingsStatus) settingsStatus.textContent = data.message || 'Saved.';
 
-    const data = await response.json();
-    settingsStatus.textContent = data.message || 'Saved.';
-
-    // Sync chat panel dropdowns
-    document.getElementById('hintLevel').value = hl;
-    document.getElementById('personality').value = pers;
-  } catch (err) {
-    settingsStatus.textContent = 'Failed to save.';
-  }
-});
+      // keep chat panel dropdowns in sync
+      setVal('hintLevel', hl);
+      setVal('personality', pers);
+    } catch (err) {
+      if (settingsStatus) settingsStatus.textContent = 'Failed to save.';
+    }
+  });
+}
 
 // ── DASHBOARD ──
 function renderDashboard(data) {
-  dashboardSummary.innerHTML = `
-    <strong>Total users: ${data.totalUsers}</strong>
-    <table style="width:100%;margin-top:16px;border-collapse:collapse;font-size:0.85rem">
-      <thead>
-        <tr style="color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border)">
-          <th style="padding:8px">User</th>
-          <th style="padding:8px">Profile</th>
-          <th style="padding:8px">Intent</th>
-          <th style="padding:8px">Policy</th>
-          <th style="padding:8px">Attempts</th>
-          <th style="padding:8px">Hints</th>
-          <th style="padding:8px">Follow-ups</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.users.map((u) => `
-          <tr style="border-bottom:1px solid var(--border-li
+  if (dashboardSummary) {
+    dashboardSummary.innerHTML = `
+      <strong>Total users: ${data.totalUsers}</strong>
+      <table style="width:100%;margin-top:16px;border-collapse:collapse;font-size:0.85rem">
+        <thead>
+          <tr style="color:var(--text-muted);text-align:left;border-bottom:1px solid var(--border)">
+            <th style="padding:8px">User</th>
+            <th style="padding:8px">Profile</th>
+            <th style="padding:8px">Intent</th>
+            <th style="padding:8px">Policy</th>
+            <th style="padding:8px">Attempts</th>
+            <th style="padding:8px">Hints</th>
+            <th style="padding:8px">Follow-ups</th>
