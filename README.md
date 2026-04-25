@@ -1,10 +1,4 @@
 # 🌿 Sage Step
-
-![Status](https://img.shields.io/badge/status-prototype-blue)
-![Built With](https://img.shields.io/badge/built%20with-Node.js%20%7C%20Express%20%7C%20OpenAI-green)
-![Focus](https://img.shields.io/badge/focus-Responsible%20AI-orange)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
-
 ---
 
 ## 🧠 Tagline
@@ -129,24 +123,6 @@ Upload:
 
 ---
 
-## 📸 Screenshots
-
-> *(Replace with your actual images before submission)*
-
-### 💬 Chat Interface
-
-![Chat UI](./assets/chat-ui.png)
-
-### 🎚 Hint Level Control
-
-![Hint Levels](./assets/hint-levels.png)
-
-### 📄 Notes Summarisation
-
-![Summarisation](./assets/summarisation.png)
-
----
-
 ## 🛠 Tech Stack
 
 **Backend**
@@ -225,12 +201,13 @@ Structured Hint Response
 ## 👥 Team
 
 *404 Brain Not Found*
+Team Member: Valencia,  Qi En, Zhe Ling, Genice
 
 ---
 
 ## 📄 License
 
-MIT License
+
 
 ---
 
