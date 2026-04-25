@@ -102,12 +102,11 @@ function isLikelyContinuation(text) {
     "simplify",
     "differentiate",
     "integrate",
+    "substitution",
+    "elimination",
   ];
 
-  return (
-    lower.length <= 80 ||
-    continuationPhrases.some((phrase) => lower.includes(phrase))
-  );
+  return continuationPhrases.some((phrase) => lower.includes(phrase));
 }
 
 function isExplicitNewQuestion(text) {
@@ -202,7 +201,7 @@ ${activeQuestion}
 Anchoring rules:
 - Treat short student replies as continuation of the active question unless they clearly start a new problem.
 - Never ask the student to repeat the original question if the active question or recent history already contains it.
-- Use the active question to interpret short replies like "minus 20", "divide by 2", "what next", or "is this right".
+- Use the active question to interpret short replies like "minus 20", "divide by 2", "what next", "substitution", or "is this right".
 - Respond only to the next step on this active question.`
     : `Anchoring rules:
 - If a question appears in the recent chat history, keep using it as the active question.
@@ -212,7 +211,7 @@ Anchoring rules:
 You are Sage Step, an AI tutor.
 
 Core rule:
-Never give final answers.
+Do not give unsolved final answers. You may confirm a final answer only after the student has completed the solution on their own.
 
 Language: ${responseLanguage}
 Hint level: ${hintLevel}
@@ -231,7 +230,7 @@ Rules:
 - Do not confirm guessed answers without shown work or prior steps in context.
 - Ask reflective questions unless the student is only asking for answer-checking after finishing.
 - Give one small next step at a time.
-- Keep the reply concise and centered on the active question
+- Keep the reply concise and centered on the active question.
 `;
 }
 
@@ -266,6 +265,11 @@ app.post("/chat", async (req, res) => {
 
     profile.settings = effectiveSettings;
 
+    const lowerMessage = trimmedMessage.toLowerCase();
+    const looksLikeFinalAttempt =
+      /[a-z]\s*=/.test(lowerMessage) ||
+      /\bis this right\b|\bcorrect\b|\bcheck\b|\bmy answer\b/.test(lowerMessage);
+
     // ---------------- INTENT ----------------
     const intentData = await classifyIntent(client, trimmedMessage);
     const intent = intentData.intent;
@@ -276,21 +280,18 @@ app.post("/chat", async (req, res) => {
 
     // ---------------- POLICY ----------------
     let policyMode = "normal";
-    
+
     if (intent === "cheating") {
       policyMode = "strict";
     } else if (intent === "verification") {
       policyMode = "guided";
-    }
-    
-    if (profile.profile === "avoidant" && intent !== "verification") {
+    } else if (profile.profile === "avoidant") {
       policyMode = "strict";
     } else if (profile.profile === "struggling") {
       policyMode = "guided";
     } else if (profile.profile === "engaged") {
       policyMode = "socratic";
     }
-
 
     // anti step-extraction abuse
     if (profile.followUpDepth > 5) {
@@ -299,10 +300,14 @@ app.post("/chat", async (req, res) => {
       });
     }
 
-    // force attempt for avoidant users
-    if (profile.profile === "avoidant") {
+    // force attempt for avoidant users, but allow final-step verification
+    if (
+      profile.profile === "avoidant" &&
+      intent !== "verification" &&
+      !looksLikeFinalAttempt
+    ) {
       const hasAttempt =
-        trimmedMessage.toLowerCase().includes("i tried") || trimmedMessage.includes("=");
+        lowerMessage.includes("i tried") || trimmedMessage.includes("=");
 
       if (!hasAttempt) {
         return res.json({
@@ -358,21 +363,25 @@ app.post("/chat", async (req, res) => {
     const recentUserTurns = conversationWindow
       .filter((item) => item.role === "user")
       .map((item) => item.content.toLowerCase());
-    
+
     const hasShownWorkInContext =
       recentUserTurns.length >= 2 ||
       recentUserTurns.some((text) => text.includes("="));
-    
+
+    const isConfirmationReply =
+      /correct|that'?s right|yes[, ]|yes\.|well done|nice work|exactly|you got it/i.test(
+        reply
+      );
+
     const isAllowedConfirmation =
-      intent === "verification" &&
       !!profile.activeQuestion &&
       hasShownWorkInContext &&
-      /correct|that'?s right|yes[, ]|yes\.|well done|nice work|exactly/i.test(reply);
-    
+      looksLikeFinalAttempt &&
+      isConfirmationReply;
+
     if (!check.safe && !isAllowedConfirmation) {
       reply = "Let’s focus on the method. What step do you think comes next?";
     }
-
 
     // ---------------- SAVE CONTEXT ----------------
     profile.chatHistory = [
@@ -453,6 +462,10 @@ If question -> give hints only.
       });
 
       return res.json({ reply: response.choices[0].message.content });
+    } else {
+      return res.status(400).json({
+        reply: "Unsupported file type. Please upload PDF, TXT, CSV, MD, or image files.",
+      });
     }
 
     const prompt =
